@@ -3,7 +3,7 @@ import { Button, ConfigProvider, Form, Input } from 'antd'
 import { Mail, MessageCircle, Phone } from 'lucide-react'
 import { toast } from 'sonner'
 import { company, whatsappLink } from '../data/company'
-import { PREFILL } from '../lib/bus'
+import { PREFILL, type PrefillDetail } from '../lib/bus'
 import { antdDarkTheme } from '../theme'
 
 interface Values {
@@ -19,16 +19,16 @@ export default function RequestForm() {
   // «В заявку» / «Запросить цену» из поиска и каталога: дописываем строку в поле «Что нужно»
   useEffect(() => {
     const onPrefill = (e: Event) => {
-      const text = (e as CustomEvent<string>).detail
+      const { text, complete } = (e as CustomEvent<PrefillDetail>).detail
       const current = ((form.getFieldValue('message') as string | undefined) ?? '').trimEnd()
-      const next = `${current ? current + '\n' : ''}${text} — `
+      const next = `${current ? current + '\n' : ''}${text}${complete ? '\n' : ' — '}`
       form.setFieldsValue({ message: next })
       const el = document.getElementById('message') as HTMLTextAreaElement | null
       if (el) {
         el.focus({ preventScroll: true })
         el.setSelectionRange(next.length, next.length)
       }
-      toast('Добавлено в заявку', { description: `${text} — укажите размер и количество` })
+      toast('Добавлено в заявку', { description: complete ? text : `${text} — укажите размер и количество` })
     }
     window.addEventListener(PREFILL, onPrefill)
     return () => window.removeEventListener(PREFILL, onPrefill)

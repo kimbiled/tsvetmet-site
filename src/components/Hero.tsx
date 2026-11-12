@@ -1,6 +1,6 @@
 import { useMemo, useState, type CSSProperties } from 'react'
 import { Input } from 'antd'
-import { ArrowRight, MapPin, Phone, Plus, Search } from 'lucide-react'
+import { ArrowRight, Calculator, MapPin, Phone, Plus, Search } from 'lucide-react'
 import Swatch from './Swatch'
 import { catalog } from '../data/catalog'
 import { company } from '../data/company'
@@ -173,6 +173,17 @@ function StockCheck() {
           </button>
         ))}
       </div>
+
+      <a
+        href="#calculator"
+        className="mt-3 flex min-h-11 items-center justify-between rounded-lg px-2 text-[14px] text-gray-600 transition-colors duration-150 [@media(hover:hover)_and_(pointer:fine)]:hover:bg-gray-100 [@media(hover:hover)_and_(pointer:fine)]:hover:text-ink"
+      >
+        <span className="flex items-center gap-2.5">
+          <Calculator className="size-[18px] text-accent" aria-hidden />
+          Посчитать вес по размерам
+        </span>
+        <ArrowRight className="size-4" aria-hidden />
+      </a>
     </div>
   )
 }

@@ -13,9 +13,15 @@ function scrollToSection(id: string) {
   document.getElementById(id)?.scrollIntoView({ behavior: reduce ? 'auto' : 'smooth', block: 'start' })
 }
 
+export interface PrefillDetail {
+  text: string
+  /** Строка уже содержит размер и количество (из калькулятора) — не просить дописать */
+  complete?: boolean
+}
+
 /** Добавить позицию в поле «Что нужно» формы заявки и прокрутить к ней. */
-export function requestItem(text: string) {
-  window.dispatchEvent(new CustomEvent<string>(PREFILL, { detail: text }))
+export function requestItem(text: string, options: { complete?: boolean } = {}) {
+  window.dispatchEvent(new CustomEvent<PrefillDetail>(PREFILL, { detail: { text, ...options } }))
   scrollToSection('request')
 }
 

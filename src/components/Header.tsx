@@ -7,6 +7,7 @@ import { company, whatsappLink } from '../data/company'
 
 const nav = [
   { href: '#catalog', label: 'Продукция' },
+  { href: '#calculator', label: 'Калькулятор' },
   { href: '#contacts', label: 'Контакты' },
   { href: '#about', label: 'О компании' },
   { href: '#requisites', label: 'Реквизиты' },

@@ -5,6 +5,7 @@ import { Toaster } from 'sonner'
 import Header from './components/Header'
 import Hero from './components/Hero'
 import Catalog from './components/Catalog'
+import WeightCalculator from './components/WeightCalculator'
 import About from './components/About'
 import Advantages from './components/Advantages'
 import RequestForm from './components/RequestForm'
@@ -27,6 +28,7 @@ export default function App() {
         <main id="main">
           <Hero />
           <Catalog />
+          <WeightCalculator />
           <RequestForm />
           <Contacts />
           <About />
