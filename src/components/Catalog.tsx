@@ -131,7 +131,7 @@ export default function Catalog() {
                 , {m.credit!.license}
               </span>
             ))}
-            . Остальные — Unsplash / Pexels.
+. Остальные — Unsplash и Wikimedia Commons (CC0, общественное достояние).
           </p>
         )}
       </div>
@@ -156,16 +156,17 @@ function MaterialCard({ m, q, wide, index }: { m: Material; q: string; wide: boo
       <Swatch
         finish={m.finish}
         image={m.image}
+        imagePosition={m.imagePosition}
         alt={m.name}
         className={clsx(
           'rounded-[12px]',
           m.image
             ? wide
-              ? 'h-36 md:h-auto md:min-h-44 md:w-64 md:shrink-0'
-              : 'h-32 sm:h-40'
+              ? 'h-28 md:h-auto md:min-h-44 md:w-64 md:shrink-0'
+              : 'h-24 sm:h-40'
             : wide
               ? 'h-14 md:h-auto md:w-56 md:shrink-0'
-              : 'h-14 sm:h-28',
+              : 'h-14 sm:h-40',
         )}
       >
         {m.symbol && <SwatchLabel>{m.symbol}</SwatchLabel>}

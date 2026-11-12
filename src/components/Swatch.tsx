@@ -14,17 +14,26 @@ const finishClass: Record<Finish, string> = {
 interface Props {
   finish: Finish
   image?: string
+  /** Фокус кадра при обрезке, CSS object-position (например '80% 30%') */
+  imagePosition?: string
   alt?: string
   className?: string
   children?: React.ReactNode
 }
 
 /** Фото товара, а если его нет — фактура металла. */
-export default function Swatch({ finish, image, alt = '', className, children }: Props) {
+export default function Swatch({ finish, image, imagePosition, alt = '', className, children }: Props) {
   return (
     <div className={clsx('relative overflow-hidden', image ? 'bg-gray-100' : finishClass[finish], className)}>
       {image && (
-        <img src={image} alt={alt} loading="lazy" decoding="async" className="absolute inset-0 size-full object-cover" />
+        <img
+          src={image}
+          alt={alt}
+          loading="lazy"
+          decoding="async"
+          style={imagePosition ? { objectPosition: imagePosition } : undefined}
+          className="absolute inset-0 size-full object-cover"
+        />
       )}
       {/* внутренняя полупрозрачная обводка вместо border */}
       <div className="pointer-events-none absolute inset-0 rounded-[inherit] shadow-[inset_0_0_0_1px_rgb(0_0_0/0.1)]" />

@@ -15,6 +15,8 @@ export interface Material {
   finish: Finish
   /** Фото: путь в /public, например '/products/copper.jpg' */
   image?: string
+  /** Фокус кадра при обрезке (CSS object-position) */
+  imagePosition?: string
   /** Подпись к фото, если лицензия требует указать автора (Wikimedia CC BY / BY-SA) */
   credit?: { author: string; license: string; url: string }
   /** Виды / формы поставки */
@@ -41,6 +43,8 @@ export const catalog: Category[] = [
     materials: [
       {
         id: 'bronze',
+        image: '/products/bronze.jpg',
+        imagePosition: '85% 25%',
         name: 'Бронза',
         symbol: 'CuSn',
         finish: 'bronze',
@@ -49,6 +53,7 @@ export const catalog: Category[] = [
       },
       {
         id: 'copper',
+        image: '/products/copper.jpg',
         name: 'Медь',
         symbol: 'Cu',
         finish: 'copper',
@@ -57,6 +62,7 @@ export const catalog: Category[] = [
       },
       {
         id: 'aluminium',
+        image: '/products/aluminium.jpg',
         name: 'Алюминий',
         symbol: 'Al',
         finish: 'aluminium',
@@ -65,6 +71,7 @@ export const catalog: Category[] = [
       },
       {
         id: 'brass',
+        image: '/products/brass.jpg',
         name: 'Латунь',
         symbol: 'CuZn',
         finish: 'brass',
@@ -73,6 +80,12 @@ export const catalog: Category[] = [
       },
       {
         id: 'babbitt',
+        image: '/products/babbitt.jpg',
+        credit: {
+          author: 'WillisPThomas (обрезано)',
+          license: 'CC BY-SA 3.0',
+          url: 'https://commons.wikimedia.org/wiki/File:Pigs_and_Bars_of_Babbitt.jpg',
+        },
         name: 'Баббит',
         symbol: 'Sn-Sb',
         finish: 'aluminium',
@@ -97,6 +110,7 @@ export const catalog: Category[] = [
     materials: [
       {
         id: 'stainless',
+        image: '/products/stainless.jpg',
         name: 'Нержавеющая сталь',
         symbol: 'Fe-Cr-Ni',
         finish: 'steel',
@@ -111,12 +125,33 @@ export const catalog: Category[] = [
     short: 'Технические',
     lead: 'Паронит и конструкционные пластики для прокладок, втулок и деталей.',
     materials: [
-      { id: 'paronite', name: 'Паронит', finish: 'polymer', forms: [], grades: ['ПОН-Б', 'ПМБ'] },
+      {
+        id: 'paronite',
+        image: '/products/paronite.jpg',
+        name: 'Паронит',
+        finish: 'polymer',
+        forms: [],
+        grades: ['ПОН-Б', 'ПМБ'],
+      },
       { id: 'caprolactam', name: 'Капролактан', finish: 'polymer', forms: ['Стержни', 'Пластины'], grades: [] },
-      { id: 'ptfe', name: 'Фторопласт', finish: 'polymer', forms: ['Стержни', 'Пластины'], grades: [] },
+      {
+        id: 'ptfe',
+        image: '/products/ptfe.jpg',
+        name: 'Фторопласт',
+        finish: 'polymer',
+        forms: ['Стержни', 'Пластины'],
+        grades: [],
+      },
       { id: 'polyurethane', name: 'Полиуретан', finish: 'polymer', forms: ['Стержни', 'Листы'], grades: [] },
       { id: 'fiberglass', name: 'Стеклотекстолит', finish: 'polymer', forms: [], grades: [] },
-      { id: 'textolite', name: 'Текстолит', finish: 'polymer', forms: ['Стержни', 'Листы'], grades: [] },
+      {
+        id: 'textolite',
+        image: '/products/textolite.jpg',
+        name: 'Текстолит',
+        finish: 'polymer',
+        forms: ['Стержни', 'Листы'],
+        grades: [],
+      },
     ],
   },
   {
@@ -127,6 +162,13 @@ export const catalog: Category[] = [
     materials: [
       {
         id: 'solder-tin',
+        image: '/products/solder-tin.jpg',
+        imagePosition: '35% 50%',
+        credit: {
+          author: 'Suyash Dwivedi',
+          license: 'CC BY-SA 4.0',
+          url: 'https://commons.wikimedia.org/wiki/File:60-40_Solder_wire_(3).jpg',
+        },
         name: 'Припой оловянный',
         symbol: 'Sn',
         finish: 'aluminium',
@@ -143,6 +185,12 @@ export const catalog: Category[] = [
     materials: [
       {
         id: 'cutters',
+        image: '/products/cutters.jpg',
+        credit: {
+          author: 'Progress and Poverty',
+          license: 'CC BY 4.0',
+          url: 'https://commons.wikimedia.org/wiki/File:Single_edge_cutting_tools.jpg',
+        },
         name: 'Резцы токарные',
         finish: 'tool',
         forms: ['Проходные', 'Подрезные', 'Чистовые', 'Расточные', 'Резьбовые', 'Канавочные'],
@@ -150,6 +198,12 @@ export const catalog: Category[] = [
       },
       {
         id: 'wheels',
+        image: '/products/wheels.jpg',
+        credit: {
+          author: 'Baihongbin',
+          license: 'CC BY-SA 4.0',
+          url: 'https://commons.wikimedia.org/wiki/File:Flexible_Flap_Disc_D100mm.jpg',
+        },
         name: 'Круги',
         finish: 'tool',
         forms: ['Шлифовальные', 'Отрезные', 'Обдирочные', 'Лепестковые'],
@@ -165,6 +219,7 @@ export const catalog: Category[] = [
     materials: [
       {
         id: 'electrodes',
+        image: '/products/electrodes.jpg',
         name: 'Электроды',
         finish: 'steel',
         forms: [],
