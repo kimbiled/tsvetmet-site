@@ -1,287 +1,195 @@
-import { useMemo, useState } from 'react'
+import { useId, useMemo, useState, type ReactNode } from 'react'
 import clsx from 'clsx'
-import { Input, Segmented, Select } from 'antd'
+import { Input } from 'antd'
 import { ArrowRight, Copy } from 'lucide-react'
 import { copyText } from './CopyButton'
 import { requestItem } from '../lib/bus'
-import { kg, massKg, materials, num, parseNum, shapes, type ShapeId } from '../lib/metalWeight'
+import { kg, massKg, metals, num, parseNum, shapes, type ShapeId } from '../lib/metalWeight'
 
-type Unit = 'мм' | 'м'
-
-/** Размеры по умолчанию для каждого вида — сразу показывают пример расчёта */
-const defaultDims: Record<ShapeId, Record<string, string>> = {
-  sheet: { t: '2', w: '1000' },
-  strip: { t: '10', w: '100' },
+/** Подсказки в пустых полях — типовые размеры */
+const examples: Record<ShapeId, Record<string, string>> = {
+  sheet: { a: '2', b: '1000' },
+  busbar: { a: '10', b: '100' },
   round: { d: '40' },
-  wire: { d: '2' },
   hex: { s: '24' },
   square: { a: '20' },
-  pipe: { D: '40', s: '2' },
-  bushing: { D: '60', d: '40' },
+  pipe: { d: '40', t: '2' },
+  profile: { a: '40', h: '20', t: '2' },
+  wire: { d: '2' },
   angle: { a: '40', b: '40', t: '4' },
+  plate: { a: '20', b: '1000' },
 }
 
-const defaultLength = (id: ShapeId): { value: string; unit: Unit } =>
-  id === 'sheet' ? { value: '2000', unit: 'мм' } : id === 'bushing' ? { value: '100', unit: 'мм' } : { value: '3', unit: 'м' }
-
-const options = materials.map((g) => ({
-  label: g.name,
-  title: g.name,
-  options: g.alloys.map((a) => ({
-    value: `${g.id}:${a.grade}`,
-    search: `${a.grade} ${g.name}`.toLowerCase(),
-    label: (
-      <span>
-        {a.grade} <span className="text-gray-500">· {g.name.toLowerCase()}</span>
-      </span>
-    ),
-  })),
-}))
-
 export default function WeightCalculator() {
-  const [alloyKey, setAlloyKey] = useState('aluminium:Д16Т')
-  const [shapeId, setShapeId] = useState<ShapeId>('round')
-  const [dims, setDims] = useState(defaultDims)
-  const [lengths, setLengths] = useState(() =>
-    Object.fromEntries(shapes.map((s) => [s.id, defaultLength(s.id)])) as Record<ShapeId, { value: string; unit: Unit }>,
+  const [shapeId, setShapeId] = useState<ShapeId>('sheet')
+  const [metalId, setMetalId] = useState('aluminium')
+  const [grade, setGrade] = useState('Д16Т')
+  const [dims, setDims] = useState<Record<ShapeId, Record<string, string>>>(
+    () => Object.fromEntries(shapes.map((s) => [s.id, {}])) as Record<ShapeId, Record<string, string>>,
   )
+  const [length, setLength] = useState('')
   const [qty, setQty] = useState('1')
-  const [reverseKg, setReverseKg] = useState('')
 
   const shape = shapes.find((s) => s.id === shapeId)!
-  const [groupId, grade] = alloyKey.split(':')
-  const alloy = materials.find((g) => g.id === groupId)!.alloys.find((a) => a.grade === grade)!
-  const len = lengths[shapeId]
+  const metal = metals.find((m) => m.id === metalId)!
+  const alloy = metal.alloys.find((a) => a.grade === grade) ?? metal.alloys[0]
 
   const calc = useMemo(() => {
     const d = Object.fromEntries(shape.fields.map((f) => [f.key, parseNum(dims[shapeId][f.key] ?? '')]))
-    const lengthRaw = parseNum(len.value)
+    const L = parseNum(length)
     const count = parseNum(qty)
-    const filled = [...Object.values(d), lengthRaw, count].every((v) => Number.isFinite(v) && v > 0)
-    if (!filled) return { ok: false as const, error: null }
+    if (![...Object.values(d), L, count].every((v) => Number.isFinite(v) && v > 0)) return { ok: false as const, error: null }
     const error = shape.check?.(d) ?? null
     if (error) return { ok: false as const, error }
-    const lengthMm = len.unit === 'м' ? lengthRaw * 1000 : lengthRaw
     const area = shape.area(d)
-    const piece = massKg(area, lengthMm, alloy.density)
     const pieces = Math.round(count)
+    const piece = massKg(area, L, alloy.density)
     return {
       ok: true as const,
-      d,
-      lengthLabel: `${num(lengthRaw, 3)} ${len.unit}`,
+      label: `${shape.label(d, alloy.grade)}, длина ${num(L, 3)} м`,
       pieces,
-      piece,
       total: piece * pieces,
-      // лист: вес 1 м² = толщина (мм) × плотность; остальное: вес 1 погонного метра
-      unitMass: shape.perSquareMeter ? d.t * alloy.density : massKg(area, 1000, alloy.density),
+      perMeter: massKg(area, 1, alloy.density),
     }
-  }, [shape, dims, shapeId, len, qty, alloy])
+  }, [shape, shapeId, dims, length, qty, alloy])
 
-  const reverse = parseNum(reverseKg)
-  const reverseMeters = calc.ok && !shape.perSquareMeter && reverse > 0 ? reverse / calc.unitMass : null
-
-  const line = calc.ok
-    ? `${shape.label(calc.d, alloy.grade)}, длина ${calc.lengthLabel} — ${calc.pieces} шт (≈ ${kg(calc.total)} кг)`
-    : ''
-
-  const setDim = (key: string, value: string) => setDims((all) => ({ ...all, [shapeId]: { ...all[shapeId], [key]: value } }))
-
-  const setUnit = (unit: Unit) =>
-    setLengths((all) => {
-      const cur = all[shapeId]
-      if (cur.unit === unit) return all
-      const v = parseNum(cur.value)
-      const value = Number.isFinite(v) ? String(+(unit === 'м' ? v / 1000 : v * 1000).toFixed(4)).replace('.', ',') : cur.value
-      return { ...all, [shapeId]: { value, unit } }
-    })
-
+  const line = calc.ok ? `${calc.label} — ${calc.pieces} шт (≈ ${kg(calc.total)} кг)` : ''
   const invalid = (v: string) => v.trim() !== '' && !(parseNum(v) > 0)
+
+  const pickMetal = (id: string) => {
+    setMetalId(id)
+    setGrade(metals.find((m) => m.id === id)!.alloys[0].grade)
+  }
 
   return (
     <section id="calculator" aria-labelledby="calc-title" className="bg-white py-20 shadow-[0_-1px_0_rgb(0_0_0/0.06)] sm:py-28">
       <div className="mx-auto max-w-6xl px-4 sm:px-6">
         <p className="text-[14px] font-medium text-accent-ink">Калькулятор</p>
         <h2 id="calc-title" className="mt-2 text-[2rem] leading-[1.1] font-semibold tracking-[-0.03em] sm:text-[2.5rem]">
-          Калькулятор веса металлопроката
+          Калькулятор металлопроката
         </h2>
         <p className="mt-4 max-w-[60ch] text-[16px] leading-relaxed text-gray-600">
-          Теоретическая масса по марке и размерам — для заявки, сметы и расчёта доставки.
+          Теоретический вес цветного металла и нержавейки: выберите тип проката, металл и введите размеры.
         </p>
 
-        <div className="mt-10 grid items-start gap-3 lg:grid-cols-[1.45fr_1fr]">
-          {/* Ввод */}
-          <div className="rounded-2xl bg-page p-4 shadow-[var(--shadow-ring)] sm:p-6">
-            <label htmlFor="calc-material" className="mb-1.5 block text-[14px] font-medium">
-              Материал и марка
-            </label>
-            <Select
-              id="calc-material"
-              value={alloyKey}
-              onChange={setAlloyKey}
-              options={options}
-              showSearch
-              filterOption={(input, option) => String((option as { search?: string })?.search ?? '').includes(input.toLowerCase())}
-              size="large"
-              className="w-full"
-              listHeight={320}
-            />
+        <div className="mt-10 overflow-hidden rounded-2xl bg-white shadow-[var(--shadow-card)]">
+          <div className="grid lg:grid-cols-[1.4fr_1fr_1fr]">
+            {/* 1. Тип проката + чертёж */}
+            <div className="p-4 sm:p-6">
+              <Step n={1}>Тип проката</Step>
+              <div className="grid gap-4 sm:grid-cols-[minmax(0,1fr)_200px] lg:grid-cols-1 xl:grid-cols-[minmax(0,1fr)_190px]">
+                <div role="radiogroup" aria-label="Тип проката" className="grid grid-cols-2 gap-0.5 sm:grid-cols-1">
+                  {shapes.map((s) => (
+                    <Radio key={s.id} name="calc-shape" checked={s.id === shapeId} onChange={() => setShapeId(s.id)}>
+                      {s.name}
+                    </Radio>
+                  ))}
+                </div>
+                <div className="grid h-36 place-items-center self-start rounded-xl bg-page p-2 shadow-[var(--shadow-ring)] sm:sticky sm:top-24 sm:aspect-[4/3] sm:h-auto">
+                  <Drawing id={shapeId} />
+                </div>
+              </div>
+            </div>
 
-            <fieldset className="mt-6">
-              <legend className="mb-2 text-[14px] font-medium">Вид проката</legend>
-              <div className="grid grid-cols-3 gap-2">
-                {shapes.map((s) => (
-                  <label key={s.id} className="cursor-pointer">
+            {/* 2. Металл и марка */}
+            <div className="p-4 shadow-[inset_0_1px_0_rgb(0_0_0/0.06)] sm:p-6 lg:shadow-[inset_1px_0_0_rgb(0_0_0/0.06)]">
+              <Step n={2}>Металл</Step>
+              <div role="radiogroup" aria-label="Металл" className="grid grid-cols-2 gap-0.5 sm:grid-cols-1">
+                {metals.map((m) => (
+                  <Radio key={m.id} name="calc-metal" checked={m.id === metalId} onChange={() => pickMetal(m.id)}>
+                    {m.name}
+                  </Radio>
+                ))}
+              </div>
+              <p className="mt-5 mb-2 text-[13px] font-medium text-gray-500">Марка</p>
+              <div role="radiogroup" aria-label="Марка" className="flex flex-wrap gap-1.5">
+                {metal.alloys.map((a) => (
+                  <label
+                    key={a.grade}
+                    className="relative inline-flex min-h-9 cursor-pointer items-center rounded-lg bg-white px-3 text-[14px] font-medium shadow-[var(--shadow-ring)] transition-[transform,background-color,color] duration-150 ease-out before:absolute before:inset-x-0 before:-inset-y-1 before:content-[''] active:scale-[0.97] has-checked:bg-ink has-checked:text-white has-focus-visible:outline-2 has-focus-visible:outline-offset-2 has-focus-visible:outline-accent"
+                  >
                     <input
                       type="radio"
-                      name="calc-shape"
-                      value={s.id}
-                      checked={s.id === shapeId}
-                      onChange={() => {
-                        setShapeId(s.id)
-                        setReverseKg('')
-                      }}
-                      className="peer sr-only"
+                      name="calc-grade"
+                      checked={a.grade === alloy.grade}
+                      onChange={() => setGrade(a.grade)}
+                      className="sr-only"
                     />
-                    <span
-                      className={clsx(
-                        'flex min-h-[72px] flex-col items-center justify-center gap-1.5 rounded-xl bg-white px-1.5 py-2 text-center text-[13px] leading-tight shadow-[var(--shadow-ring)] transition-[transform,box-shadow,color] duration-150 ease-out active:scale-[0.97]',
-                        'peer-checked:bg-accent-soft peer-checked:text-accent-ink peer-checked:shadow-[inset_0_0_0_1.5px_rgb(224_119_58/0.7)]',
-                        'peer-focus-visible:outline-2 peer-focus-visible:outline-offset-2 peer-focus-visible:outline-accent',
-                        '[@media(hover:hover)_and_(pointer:fine)]:hover:shadow-[0_0_0_1px_rgb(0_0_0/0.18)]',
-                      )}
-                    >
-                      <ShapeIcon id={s.id} />
-                      {s.name}
-                    </span>
+                    {a.grade}
                   </label>
                 ))}
               </div>
-            </fieldset>
+              <p className="mt-3 text-[13px] text-gray-500 tabular-nums">Плотность {num(alloy.density)} г/см³</p>
+            </div>
 
-            <div className="mt-6 grid grid-cols-2 gap-x-3 gap-y-4">
-              {shape.fields.map((f) => (
-                <div key={f.key} className={clsx(shape.fields.length === 3 && f.key === 't' && 'col-span-2 sm:col-span-1')}>
-                  <label htmlFor={`calc-${f.key}`} className="mb-1.5 block text-[14px] font-medium">
-                    {f.label}
-                  </label>
+            {/* 3. Размеры */}
+            <div className="p-4 shadow-[inset_0_1px_0_rgb(0_0_0/0.06)] sm:p-6 lg:shadow-[inset_1px_0_0_rgb(0_0_0/0.06)]">
+              <Step n={3}>Размеры</Step>
+              <div className="grid grid-cols-2 gap-x-3 gap-y-4 lg:grid-cols-1">
+                {shape.fields.map((f) => (
+                  <Field key={f.key} id={`calc-${f.key}`} label={<><Letter>{f.letter}</Letter> {f.label}, мм</>}>
+                    <Input
+                      id={`calc-${f.key}`}
+                      value={dims[shapeId][f.key] ?? ''}
+                      onChange={(e) => setDims((all) => ({ ...all, [shapeId]: { ...all[shapeId], [f.key]: e.target.value } }))}
+                      placeholder={examples[shapeId][f.key]}
+                      inputMode="decimal"
+                      autoComplete="off"
+                      status={invalid(dims[shapeId][f.key] ?? '') ? 'error' : undefined}
+                      size="large"
+                      className="tabular-nums"
+                    />
+                  </Field>
+                ))}
+                <Field id="calc-length" label="Длина, м">
                   <Input
-                    id={`calc-${f.key}`}
-                    value={dims[shapeId][f.key] ?? ''}
-                    onChange={(e) => setDim(f.key, e.target.value)}
+                    id="calc-length"
+                    value={length}
+                    onChange={(e) => setLength(e.target.value)}
+                    placeholder="3"
                     inputMode="decimal"
                     autoComplete="off"
-                    suffix={<span className="text-gray-400">мм</span>}
-                    status={invalid(dims[shapeId][f.key] ?? '') ? 'error' : undefined}
+                    status={invalid(length) ? 'error' : undefined}
                     size="large"
                     className="tabular-nums"
                   />
-                </div>
-              ))}
-
-              <div>
-                <div className="mb-1.5 flex items-center justify-between gap-2">
-                  <label htmlFor="calc-length" className="text-[14px] font-medium">
-                    Длина
-                  </label>
-                  <Segmented
-                    size="small"
-                    value={len.unit}
-                    onChange={(v) => setUnit(v as Unit)}
-                    options={['мм', 'м']}
-                    aria-label="Единица длины"
+                </Field>
+                <Field id="calc-qty" label="Количество, шт">
+                  <Input
+                    id="calc-qty"
+                    value={qty}
+                    onChange={(e) => setQty(e.target.value)}
+                    inputMode="numeric"
+                    autoComplete="off"
+                    status={invalid(qty) ? 'error' : undefined}
+                    size="large"
+                    className="tabular-nums"
                   />
-                </div>
-                <Input
-                  id="calc-length"
-                  value={len.value}
-                  onChange={(e) => setLengths((all) => ({ ...all, [shapeId]: { ...all[shapeId], value: e.target.value } }))}
-                  inputMode="decimal"
-                  autoComplete="off"
-                  suffix={<span className="text-gray-400">{len.unit}</span>}
-                  status={invalid(len.value) ? 'error' : undefined}
-                  size="large"
-                  className="tabular-nums"
-                />
-              </div>
-              <div>
-                <label htmlFor="calc-qty" className="mb-1.5 block text-[14px] font-medium">
-                  Количество
-                </label>
-                <Input
-                  id="calc-qty"
-                  value={qty}
-                  onChange={(e) => setQty(e.target.value)}
-                  inputMode="numeric"
-                  autoComplete="off"
-                  suffix={<span className="text-gray-400">шт</span>}
-                  status={invalid(qty) ? 'error' : undefined}
-                  size="large"
-                  className="tabular-nums"
-                />
+                </Field>
               </div>
             </div>
           </div>
 
-          {/* Результат — без анимации: меняется при каждом нажатии клавиши */}
-          <div className="rounded-2xl bg-ink p-5 text-white sm:p-6 lg:sticky lg:top-24" aria-live="polite">
-            <p className="text-[14px] text-gray-400">Теоретическая масса</p>
-            <p className="mt-1 flex items-baseline gap-2 tabular-nums">
-              <span className="text-[44px] leading-none font-semibold tracking-[-0.03em]">{calc.ok ? kg(calc.total) : '—'}</span>
-              <span className="text-[20px] text-gray-400">кг</span>
-            </p>
-            {calc.ok ? (
-              <p className="mt-2 text-[14px] text-gray-400">{line.split(' — ')[0]}</p>
-            ) : (
-              <p className={clsx('mt-2 text-[14px]', calc.error ? 'text-[#f0a274]' : 'text-gray-400')}>
-                {calc.error ?? 'Введите размеры, длину и количество'}
+          {/* Итог — без анимации: меняется при каждом нажатии клавиши */}
+          <div className="flex flex-col gap-4 bg-ink px-4 py-5 text-white sm:px-6 md:flex-row md:items-center md:justify-between" aria-live="polite">
+            <div className="min-w-0">
+              <p className="text-[14px] text-gray-400">Вес (теоретический)</p>
+              <p className="mt-0.5 flex items-baseline gap-2 tabular-nums">
+                <span className="text-[40px] leading-none font-semibold tracking-[-0.03em]">{calc.ok ? kg(calc.total) : '0'}</span>
+                <span className="text-[18px] text-gray-400">кг</span>
               </p>
-            )}
-
-            <dl className="mt-5 text-[14px]">
-              {[
-                ['1 шт', calc.ok ? `${kg(calc.piece)} кг` : '—'],
-                [shape.perSquareMeter ? '1 м²' : '1 м', calc.ok ? `${kg(calc.unitMass)} кг` : '—'],
-                [`Плотность ${alloy.grade}`, `${num(alloy.density)} г/см³`],
-              ].map(([k, v]) => (
-                <div key={k} className="flex justify-between gap-4 py-2.5 shadow-[inset_0_1px_0_rgb(255_255_255/0.08)]">
-                  <dt className="text-gray-400">{k}</dt>
-                  <dd className="font-medium tabular-nums">{v}</dd>
-                </div>
-              ))}
-              {!shape.perSquareMeter && (
-                <div className="flex items-center justify-between gap-3 py-2 shadow-[inset_0_1px_0_rgb(255_255_255/0.08)]">
-                  <dt>
-                    <label htmlFor="calc-reverse" className="text-gray-400">
-                      Длина в
-                    </label>
-                  </dt>
-                  <dd className="flex items-center gap-2 tabular-nums">
-                    <span className="relative">
-                      <input
-                        id="calc-reverse"
-                        value={reverseKg}
-                        onChange={(e) => setReverseKg(e.target.value)}
-                        inputMode="decimal"
-                        autoComplete="off"
-                        placeholder="100"
-                        className="h-10 w-24 rounded-lg bg-white/6 pr-8 pl-3 text-[16px] text-white shadow-[inset_0_0_0_1px_rgb(255_255_255/0.12)] outline-none transition-shadow duration-150 placeholder:text-gray-600 focus:shadow-[inset_0_0_0_1.5px_var(--color-accent)]"
-                      />
-                      <span className="pointer-events-none absolute top-1/2 right-2.5 -translate-y-1/2 text-[13px] text-gray-500">кг</span>
-                    </span>
-                    <span className="min-w-[4.5rem] text-right font-medium">
-                      {reverseMeters ? `≈ ${num(reverseMeters, reverseMeters < 10 ? 2 : 1)} м` : '— м'}
-                    </span>
-                  </dd>
-                </div>
-              )}
-            </dl>
-
-            <div className="mt-5 flex flex-col gap-2 sm:flex-row lg:flex-col xl:flex-row">
+              <p className={clsx('mt-2 text-[14px]', calc.error ? 'text-[#f0a274]' : 'text-gray-400')}>
+                {calc.ok
+                  ? `${calc.label} · 1 м — ${kg(calc.perMeter)} кг`
+                  : (calc.error ?? 'Введите размеры и длину — вес посчитается сразу')}
+              </p>
+            </div>
+            <div className="flex shrink-0 flex-col gap-2 sm:flex-row">
               <button
                 type="button"
                 disabled={!calc.ok}
                 onClick={() => requestItem(line, { complete: true })}
-                className="btn btn-accent h-11 disabled:pointer-events-none disabled:opacity-40 sm:flex-1 lg:flex-none xl:flex-1"
+                className="btn btn-accent h-11 disabled:pointer-events-none disabled:opacity-40"
               >
                 Добавить в заявку
                 <ArrowRight className="size-4" aria-hidden />
@@ -296,35 +204,179 @@ export default function WeightCalculator() {
                 Скопировать
               </button>
             </div>
-            <p className="mt-4 text-[12px] leading-relaxed text-gray-500">
-              Масса теоретическая, по справочной плотности. Фактический вес зависит от допусков проката.
-            </p>
           </div>
         </div>
+        <p className="mt-3 text-[13px] text-gray-500">Теоретический вес является справочной величиной и зависит от допусков проката.</p>
       </div>
     </section>
   )
 }
 
-/** Сечения проката — простые иконки 28×28 */
-function ShapeIcon({ id }: { id: ShapeId }) {
-  const common = { fill: 'currentColor', fillOpacity: 0.14, stroke: 'currentColor', strokeWidth: 1.5 }
+function Step({ n, children }: { n: number; children: ReactNode }) {
   return (
-    <svg viewBox="0 0 28 28" className="size-7" aria-hidden>
-      {id === 'sheet' && <rect x="3" y="10" width="22" height="8" rx="1" {...common} />}
-      {id === 'strip' && <rect x="3" y="12" width="22" height="4" rx="0.5" {...common} />}
-      {id === 'round' && <circle cx="14" cy="14" r="10" {...common} />}
-      {id === 'wire' && (
+    <h3 className="mb-3 flex items-center gap-2 text-[15px] font-semibold">
+      <span className="grid size-6 place-items-center rounded-full bg-ink text-[12px] text-white tabular-nums">{n}</span>
+      {children}
+    </h3>
+  )
+}
+
+function Radio({ name, checked, onChange, children }: { name: string; checked: boolean; onChange: () => void; children: ReactNode }) {
+  return (
+    <label className="group flex min-h-11 cursor-pointer items-center gap-2.5 rounded-lg px-2.5 text-[15px] transition-colors duration-150 has-checked:bg-accent-soft has-checked:text-accent-ink has-focus-visible:outline-2 has-focus-visible:outline-accent [@media(hover:hover)_and_(pointer:fine)]:hover:bg-gray-100">
+      <input type="radio" name={name} checked={checked} onChange={onChange} className="sr-only" />
+      <span className="grid size-4 shrink-0 place-items-center rounded-full bg-white shadow-[inset_0_0_0_1.5px_rgb(0_0_0/0.25)] group-has-checked:shadow-[inset_0_0_0_1.5px_var(--color-accent)]">
+        <span className="size-2 rounded-full bg-accent opacity-0 transition-opacity duration-150 group-has-checked:opacity-100" />
+      </span>
+      <span className="min-w-0 leading-tight">{children}</span>
+    </label>
+  )
+}
+
+function Field({ id, label, children }: { id: string; label: ReactNode; children: ReactNode }) {
+  return (
+    <div>
+      <label htmlFor={id} className="mb-1.5 block text-[14px] font-medium">
+        {label}
+      </label>
+      {children}
+    </div>
+  )
+}
+
+function Letter({ children }: { children: ReactNode }) {
+  return <span className="font-semibold text-accent-ink italic">{children}</span>
+}
+
+/* ---------- Чертежи сечений с буквами размеров ---------- */
+
+const C = { fill: '#e7e5e4', stroke: '#8a8a8a', dim: '#e0773a', text: '#b0521a' }
+
+function Drawing({ id }: { id: ShapeId }) {
+  const uid = useId().replace(/:/g, '')
+  const arrow = `url(#a${uid})`
+  const body = { fill: `url(#h${uid})`, stroke: C.stroke, strokeWidth: 1.5 }
+
+  // Размерная линия со стрелками и буквой
+  const Dim = ({ x1, y1, x2, y2, l, lx, ly }: { x1: number; y1: number; x2: number; y2: number; l: string; lx: number; ly: number }) => (
+    <>
+      <line x1={x1} y1={y1} x2={x2} y2={y2} stroke={C.dim} strokeWidth={1.5} markerStart={arrow} markerEnd={arrow} />
+      <text x={lx} y={ly} fill={C.text} fontSize={15} fontWeight={600} fontStyle="italic" textAnchor="middle" dominantBaseline="middle">
+        {l}
+      </text>
+    </>
+  )
+  // Выносная линия
+  const Ext = ({ x1, y1, x2, y2 }: { x1: number; y1: number; x2: number; y2: number }) => (
+    <line x1={x1} y1={y1} x2={x2} y2={y2} stroke={C.dim} strokeWidth={0.75} opacity={0.6} />
+  )
+  // Выноска к тонкой стенке
+  const Leader = ({ x1, y1, x2, y2, l }: { x1: number; y1: number; x2: number; y2: number; l: string }) => (
+    <>
+      <line x1={x2} y1={y2} x2={x1} y2={y1} stroke={C.dim} strokeWidth={1.25} markerEnd={arrow} />
+      <text x={x2 + (x2 > x1 ? 8 : -8)} y={y2} fill={C.text} fontSize={15} fontWeight={600} fontStyle="italic" textAnchor="middle" dominantBaseline="middle">
+        {l}
+      </text>
+    </>
+  )
+
+  const flatRect = (h: number) => {
+    const y = 66 - h / 2
+    return (
+      <>
+        <rect x={40} y={y} width={115} height={h} {...body} />
+        <Ext x1={155} y1={y} x2={176} y2={y} />
+        <Ext x1={155} y1={y + h} x2={176} y2={y + h} />
+        <Dim x1={170} y1={y} x2={170} y2={y + h} l="a" lx={184} ly={66} />
+        <Ext x1={40} y1={y + h} x2={40} y2={124} />
+        <Ext x1={155} y1={y + h} x2={155} y2={124} />
+        <Dim x1={40} y1={118} x2={155} y2={118} l="b" lx={97} ly={134} />
+      </>
+    )
+  }
+
+  return (
+    <svg viewBox="0 0 200 150" className="h-full max-h-44 w-full" role="img" aria-label="Чертёж сечения с обозначениями размеров">
+      <defs>
+        <marker id={`a${uid}`} viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+          <path d="M0 1 L9 5 L0 9 Z" fill={C.dim} />
+        </marker>
+        <pattern id={`h${uid}`} width="6" height="6" patternUnits="userSpaceOnUse" patternTransform="rotate(45)">
+          <rect width="6" height="6" fill={C.fill} />
+          <line x1="0" y1="0" x2="0" y2="6" stroke="#cfccc8" strokeWidth="1.5" />
+        </pattern>
+      </defs>
+
+      {id === 'sheet' && flatRect(14)}
+      {id === 'busbar' && flatRect(26)}
+      {id === 'plate' && flatRect(40)}
+
+      {(id === 'round' || id === 'pipe') && (
         <>
-          <circle cx="14" cy="14" r="10" fill="none" stroke="currentColor" strokeWidth="1.5" strokeDasharray="2 3" opacity="0.5" />
-          <circle cx="14" cy="14" r="3.5" {...common} />
+          {id === 'round' ? (
+            <circle cx={112} cy={70} r={44} {...body} />
+          ) : (
+            <path d="M112 26a44 44 0 1 1 0 88a44 44 0 1 1 0-88Zm0 9a35 35 0 1 0 0 70a35 35 0 1 0 0-70Z" fillRule="evenodd" {...body} />
+          )}
+          <Ext x1={112} y1={26} x2={44} y2={26} />
+          <Ext x1={112} y1={114} x2={44} y2={114} />
+          <Dim x1={50} y1={26} x2={50} y2={114} l={id === 'round' ? 'd' : 'D'} lx={36} ly={70} />
+          {id === 'pipe' && <Leader x1={143} y1={39} x2={170} y2={20} l="t" />}
         </>
       )}
-      {id === 'hex' && <polygon points="14,3 23.5,8.5 23.5,19.5 14,25 4.5,19.5 4.5,8.5" {...common} />}
-      {id === 'square' && <rect x="5" y="5" width="18" height="18" rx="1" {...common} />}
-      {id === 'pipe' && <path d="M14 4a10 10 0 1 1 0 20a10 10 0 1 1 0-20Zm0 2.5a7.5 7.5 0 1 0 0 15a7.5 7.5 0 1 0 0-15Z" fillRule="evenodd" {...common} />}
-      {id === 'bushing' && <path d="M14 4a10 10 0 1 1 0 20a10 10 0 1 1 0-20Zm0 5a5 5 0 1 0 0 10a5 5 0 1 0 0-10Z" fillRule="evenodd" {...common} />}
-      {id === 'angle' && <path d="M5 4h5v14h13v5H5Z" {...common} />}
+
+      {id === 'wire' && (
+        <>
+          <circle cx={112} cy={70} r={16} {...body} />
+          <Ext x1={112} y1={54} x2={70} y2={54} />
+          <Ext x1={112} y1={86} x2={70} y2={86} />
+          <Dim x1={76} y1={54} x2={76} y2={86} l="d" lx={62} ly={70} />
+        </>
+      )}
+
+      {id === 'hex' && (
+        <>
+          <polygon points="88,26 136,26 160,70 136,114 88,114 64,70" {...body} />
+          <Ext x1={88} y1={26} x2={36} y2={26} />
+          <Ext x1={88} y1={114} x2={36} y2={114} />
+          <Dim x1={42} y1={26} x2={42} y2={114} l="s" lx={28} ly={70} />
+        </>
+      )}
+
+      {id === 'square' && (
+        <>
+          <rect x={60} y={20} width={84} height={84} {...body} />
+          <Ext x1={60} y1={104} x2={60} y2={128} />
+          <Ext x1={144} y1={104} x2={144} y2={128} />
+          <Dim x1={60} y1={122} x2={144} y2={122} l="a" lx={102} ly={138} />
+        </>
+      )}
+
+      {id === 'profile' && (
+        <>
+          <path d="M58 30h100v64H58Zm9 9v46h82V39Z" fillRule="evenodd" {...body} />
+          <Ext x1={58} y1={94} x2={58} y2={124} />
+          <Ext x1={158} y1={94} x2={158} y2={124} />
+          <Dim x1={58} y1={118} x2={158} y2={118} l="a" lx={108} ly={134} />
+          <Ext x1={58} y1={30} x2={30} y2={30} />
+          <Ext x1={58} y1={94} x2={30} y2={94} />
+          <Dim x1={36} y1={30} x2={36} y2={94} l="h" lx={22} ly={62} />
+          <Leader x1={153} y1={34} x2={178} y2={16} l="t" />
+        </>
+      )}
+
+      {id === 'angle' && (
+        <>
+          <path d="M66 18v90h92v-11H77V18Z" {...body} />
+          <Ext x1={66} y1={18} x2={38} y2={18} />
+          <Ext x1={66} y1={108} x2={38} y2={108} />
+          <Dim x1={44} y1={18} x2={44} y2={108} l="a" lx={30} ly={63} />
+          <Ext x1={66} y1={108} x2={66} y2={132} />
+          <Ext x1={158} y1={108} x2={158} y2={132} />
+          <Dim x1={66} y1={126} x2={158} y2={126} l="b" lx={112} ly={142} />
+          <Leader x1={78} y1={26} x2={104} y2={14} l="t" />
+        </>
+      )}
     </svg>
   )
 }

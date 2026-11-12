@@ -1,6 +1,6 @@
 /**
- * Калькулятор теоретической массы проката.
- * Масса, кг = площадь сечения (мм²) × длина (мм) × плотность (г/см³) / 1 000 000.
+ * Калькулятор теоретической массы цветного проката.
+ * Масса, кг = площадь сечения (мм²) × длина (м) × плотность (г/см³) / 1000.
  * Плотности справочные; фактический вес зависит от допусков проката.
  */
 
@@ -10,14 +10,14 @@ export interface Alloy {
   density: number
 }
 
-export interface MaterialGroup {
+export interface MetalGroup {
   id: string
   name: string
   alloys: Alloy[]
 }
 
-/** Марки — по ассортименту компании (src/data/catalog.ts). */
-export const materials: MaterialGroup[] = [
+/** Только цветной металл и нержавейка — марки по ассортименту компании */
+export const metals: MetalGroup[] = [
   {
     id: 'aluminium',
     name: 'Алюминий',
@@ -55,155 +55,111 @@ export const materials: MaterialGroup[] = [
       { grade: 'AISI 430', density: 7.7 },
     ],
   },
-  {
-    id: 'babbitt',
-    name: 'Баббит',
-    alloys: [
-      { grade: 'Б83', density: 7.38 },
-      { grade: 'Б16', density: 9.29 },
-      { grade: 'БКА', density: 10.5 },
-    ],
-  },
-  { id: 'nichrome', name: 'Нихром', alloys: [{ grade: 'Х20Н80', density: 8.4 }] },
-  {
-    id: 'solder',
-    name: 'Припой оловянный',
-    alloys: [
-      { grade: 'ПОС 30', density: 9.7 },
-      { grade: 'ПОС 40', density: 9.3 },
-      { grade: 'ПОС 60', density: 8.5 },
-    ],
-  },
-  {
-    id: 'technical',
-    name: 'Технические материалы',
-    alloys: [
-      { grade: 'Капролон', density: 1.15 },
-      { grade: 'Фторопласт', density: 2.2 },
-      { grade: 'Полиуретан', density: 1.2 },
-      { grade: 'Текстолит', density: 1.35 },
-      { grade: 'Стеклотекстолит', density: 1.8 },
-      { grade: 'Паронит', density: 1.9 },
-    ],
-  },
 ]
 
-export type ShapeId = 'sheet' | 'strip' | 'round' | 'wire' | 'hex' | 'square' | 'pipe' | 'bushing' | 'angle'
+export type ShapeId = 'sheet' | 'busbar' | 'round' | 'hex' | 'square' | 'pipe' | 'profile' | 'wire' | 'angle' | 'plate'
 
 export interface ShapeField {
   key: string
+  /** Буква на чертеже */
+  letter: string
   label: string
 }
+
+type Dims = Record<string, number>
 
 export interface Shape {
   id: ShapeId
   name: string
   fields: ShapeField[]
-  /** Площадь сечения, мм² (для листа — толщина × ширина) */
-  area: (d: Record<string, number>) => number
+  /** Площадь сечения, мм² */
+  area: (d: Dims) => number
   /** Ошибка геометрии, если размеры невозможны */
-  check?: (d: Record<string, number>) => string | null
-  /** Короткое описание для заявки: «Труба ⌀40×2 мм» */
-  label: (d: Record<string, number>, grade: string) => string
-  /** Лист/плита: показываем вес 1 м², а не 1 м */
-  perSquareMeter?: boolean
-  /** Длина по умолчанию в метрах (длинномерный прокат) */
-  lengthInMeters?: boolean
+  check?: (d: Dims) => string | null
+  /** Короткое описание для заявки: «Труба Д16Т ⌀40×2 мм» */
+  label: (d: Dims, grade: string) => string
 }
 
 const n = (v: number) => num(v, 2)
+const flat = (name: string): Shape => ({
+  id: name === 'Лист' ? 'sheet' : name === 'Шина' ? 'busbar' : 'plate',
+  name,
+  fields: [
+    { key: 'a', letter: 'a', label: 'Толщина' },
+    { key: 'b', letter: 'b', label: 'Ширина' },
+  ],
+  area: (d) => d.a * d.b,
+  label: (d, g) => `${name} ${g} ${n(d.a)}×${n(d.b)} мм`,
+})
 
+/** Порядок — как в списке компании */
 export const shapes: Shape[] = [
-  {
-    id: 'sheet',
-    name: 'Лист, плита',
-    fields: [
-      { key: 't', label: 'Толщина' },
-      { key: 'w', label: 'Ширина' },
-    ],
-    area: (d) => d.t * d.w,
-    label: (d, g) => `Лист ${g} ${n(d.t)}×${n(d.w)} мм`,
-    perSquareMeter: true,
-  },
-  {
-    id: 'strip',
-    name: 'Полоса, шина',
-    fields: [
-      { key: 't', label: 'Толщина' },
-      { key: 'w', label: 'Ширина' },
-    ],
-    area: (d) => d.t * d.w,
-    label: (d, g) => `Полоса/шина ${g} ${n(d.t)}×${n(d.w)} мм`,
-    lengthInMeters: true,
-  },
+  flat('Лист'),
+  flat('Шина'),
   {
     id: 'round',
-    name: 'Круг, пруток',
-    fields: [{ key: 'd', label: 'Диаметр' }],
+    name: 'Круг',
+    fields: [{ key: 'd', letter: 'd', label: 'Диаметр' }],
     area: (d) => (Math.PI * d.d ** 2) / 4,
     label: (d, g) => `Круг ${g} ⌀${n(d.d)} мм`,
-    lengthInMeters: true,
-  },
-  {
-    id: 'wire',
-    name: 'Проволока',
-    fields: [{ key: 'd', label: 'Диаметр' }],
-    area: (d) => (Math.PI * d.d ** 2) / 4,
-    label: (d, g) => `Проволока ${g} ⌀${n(d.d)} мм`,
-    lengthInMeters: true,
   },
   {
     id: 'hex',
     name: 'Шестигранник',
-    fields: [{ key: 's', label: 'Размер под ключ' }],
+    fields: [{ key: 's', letter: 's', label: 'Размер под ключ' }],
     area: (d) => (Math.sqrt(3) / 2) * d.s ** 2,
     label: (d, g) => `Шестигранник ${g} S${n(d.s)} мм`,
-    lengthInMeters: true,
   },
   {
     id: 'square',
     name: 'Квадрат',
-    fields: [{ key: 'a', label: 'Сторона' }],
+    fields: [{ key: 'a', letter: 'a', label: 'Сторона' }],
     area: (d) => d.a ** 2,
     label: (d, g) => `Квадрат ${g} ${n(d.a)}×${n(d.a)} мм`,
-    lengthInMeters: true,
   },
   {
     id: 'pipe',
-    name: 'Труба',
+    name: 'Труба круглая',
     fields: [
-      { key: 'D', label: 'Наружный диаметр' },
-      { key: 's', label: 'Стенка' },
+      { key: 'd', letter: 'D', label: 'Наружный диаметр' },
+      { key: 't', letter: 't', label: 'Толщина стенки' },
     ],
-    area: (d) => Math.PI * d.s * (d.D - d.s),
-    check: (d) => (d.s * 2 >= d.D ? 'Стенка должна быть меньше половины диаметра' : null),
-    label: (d, g) => `Труба ${g} ⌀${n(d.D)}×${n(d.s)} мм`,
-    lengthInMeters: true,
+    area: (d) => Math.PI * d.t * (d.d - d.t),
+    check: (d) => (d.t * 2 >= d.d ? 'Стенка должна быть меньше половины диаметра' : null),
+    label: (d, g) => `Труба ${g} ⌀${n(d.d)}×${n(d.t)} мм`,
   },
   {
-    id: 'bushing',
-    name: 'Втулка',
+    id: 'profile',
+    name: 'Труба профильная',
     fields: [
-      { key: 'D', label: 'Наружный диаметр' },
-      { key: 'd', label: 'Внутренний диаметр' },
+      { key: 'a', letter: 'a', label: 'Ширина' },
+      { key: 'h', letter: 'h', label: 'Высота' },
+      { key: 't', letter: 't', label: 'Толщина стенки' },
     ],
-    area: (d) => (Math.PI * (d.D ** 2 - d.d ** 2)) / 4,
-    check: (d) => (d.d >= d.D ? 'Внутренний диаметр должен быть меньше наружного' : null),
-    label: (d, g) => `Втулка ${g} ⌀${n(d.D)}/⌀${n(d.d)} мм`,
+    area: (d) => 2 * d.t * (d.a + d.h - 2 * d.t),
+    check: (d) => (d.t * 2 >= Math.min(d.a, d.h) ? 'Стенка должна быть меньше половины стороны' : null),
+    label: (d, g) => `Труба профильная ${g} ${n(d.a)}×${n(d.h)}×${n(d.t)} мм`,
+  },
+  {
+    id: 'wire',
+    name: 'Проволока',
+    fields: [{ key: 'd', letter: 'd', label: 'Диаметр' }],
+    area: (d) => (Math.PI * d.d ** 2) / 4,
+    label: (d, g) => `Проволока ${g} ⌀${n(d.d)} мм`,
   },
   {
     id: 'angle',
     name: 'Уголок',
     fields: [
-      { key: 'a', label: 'Полка A' },
-      { key: 'b', label: 'Полка B' },
-      { key: 't', label: 'Толщина' },
+      { key: 'a', letter: 'a', label: 'Полка 1' },
+      { key: 'b', letter: 'b', label: 'Полка 2' },
+      { key: 't', letter: 't', label: 'Толщина' },
     ],
     area: (d) => d.t * (d.a + d.b - d.t),
     check: (d) => (d.t >= Math.min(d.a, d.b) ? 'Толщина должна быть меньше полки' : null),
     label: (d, g) => `Уголок ${g} ${n(d.a)}×${n(d.b)}×${n(d.t)} мм`,
-    lengthInMeters: true,
   },
+  flat('Плита'),
 ]
 
 /** «2,5» / «2.5» / « 40 » → число; пусто или мусор → NaN */
@@ -224,7 +180,7 @@ export function kg(v: number) {
   return num(v, 3)
 }
 
-/** Масса, кг: площадь мм² × длина мм × плотность г/см³ */
-export function massKg(areaMm2: number, lengthMm: number, density: number) {
-  return (areaMm2 * lengthMm * density) / 1_000_000
+/** Масса, кг: площадь мм² × длина м × плотность г/см³ */
+export function massKg(areaMm2: number, lengthM: number, density: number) {
+  return (areaMm2 * lengthM * density) / 1000
 }

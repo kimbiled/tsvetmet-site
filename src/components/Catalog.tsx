@@ -131,7 +131,7 @@ export default function Catalog() {
                 , {m.credit!.license}
               </span>
             ))}
-. Остальные — Unsplash и Wikimedia Commons (CC0, общественное достояние).
+.
           </p>
         )}
       </div>

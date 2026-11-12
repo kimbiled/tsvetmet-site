@@ -44,7 +44,6 @@ export const catalog: Category[] = [
       {
         id: 'bronze',
         image: '/products/bronze.jpg',
-        imagePosition: '85% 25%',
         name: 'Бронза',
         symbol: 'CuSn',
         finish: 'bronze',
