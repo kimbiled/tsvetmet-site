@@ -1,0 +1,7 @@
+node_modules
+dist
+.DS_Store
+.gstack/
+
+# Сторонний набор скиллов gstack (94 МБ) — ставится отдельно: git clone https://github.com/garrytan/gstack
+.claude/skills/gstack/

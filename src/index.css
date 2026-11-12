@@ -1,0 +1,252 @@
+/* Порядок слоёв: стили antd идут до utilities, чтобы классы Tailwind их перекрывали */
+@layer theme, base, antd, components, utilities;
+
+@import 'tailwindcss' source('.');
+
+@theme {
+  --font-sans: 'Inter Variable', ui-sans-serif, system-ui, -apple-system, sans-serif;
+
+  /* Нейтральная шкала */
+  --color-ink: #171717;
+  --color-ink-soft: #262626;
+  --color-ink-deep: #0f0f0f;
+  --color-gray-600: #525252;
+  --color-gray-500: #737373;
+  --color-gray-400: #a3a3a3;
+  --color-gray-200: #e5e5e5;
+  --color-gray-100: #f2f2f2;
+  --color-page: #fafafa;
+
+  /* Приглушённый оранжевый */
+  --color-accent: #e0773a;
+  --color-accent-hover: #d36b2e;
+  --color-accent-ink: #b0521a; /* текст на светлом фоне, контраст ≥ 4.5:1 */
+  --color-accent-soft: #fcf0e7;
+
+  /* Полупрозрачные тени вместо сплошных рамок */
+  --shadow-ring: 0 0 0 1px rgb(0 0 0 / 0.08);
+  --shadow-card: 0 0 0 1px rgb(0 0 0 / 0.06), 0 1px 2px rgb(0 0 0 / 0.04), 0 6px 16px -6px rgb(0 0 0 / 0.08);
+  --shadow-float: 0 0 0 1px rgb(0 0 0 / 0.06), 0 8px 24px -8px rgb(0 0 0 / 0.16);
+
+  /* Кривые из скилла Эмиля */
+  --ease-out: cubic-bezier(0.23, 1, 0.32, 1);
+  --ease-in-out: cubic-bezier(0.77, 0, 0.175, 1);
+}
+
+@layer base {
+  html {
+    scroll-behavior: smooth;
+    scroll-padding-top: 5rem;
+    -webkit-text-size-adjust: 100%;
+  }
+  body {
+    @apply bg-page font-sans text-ink antialiased;
+    font-feature-settings: 'cv11', 'ss01';
+    -webkit-tap-highlight-color: transparent;
+  }
+  h1,
+  h2,
+  h3 {
+    text-wrap: balance;
+  }
+  :focus-visible {
+    outline: 2px solid var(--color-accent);
+    outline-offset: 2px;
+  }
+  ::selection {
+    background: rgb(224 119 58 / 0.25);
+  }
+}
+
+/* ---------- Кнопки ---------- */
+/* Нажатие: scale(0.97), 160ms ease-out. Ховер — только для мыши. */
+@utility btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  height: 2.75rem;
+  padding: 0 1.125rem;
+  border-radius: 0.625rem;
+  font-size: 0.9375rem;
+  font-weight: 500;
+  white-space: nowrap;
+  user-select: none;
+  transition:
+    transform 160ms var(--ease-out),
+    background-color 150ms ease,
+    box-shadow 150ms ease,
+    color 150ms ease;
+  &:active {
+    transform: scale(0.97);
+  }
+}
+@utility btn-dark {
+  background: var(--color-ink);
+  color: #fff;
+  @media (hover: hover) and (pointer: fine) {
+    &:hover {
+      background: #2e2e2e;
+    }
+  }
+}
+@utility btn-light {
+  background: #fff;
+  color: var(--color-ink);
+  box-shadow: var(--shadow-ring), 0 1px 2px rgb(0 0 0 / 0.04);
+  @media (hover: hover) and (pointer: fine) {
+    &:hover {
+      box-shadow: 0 0 0 1px rgb(0 0 0 / 0.16), 0 1px 2px rgb(0 0 0 / 0.06);
+    }
+  }
+}
+@utility btn-accent {
+  background: var(--color-accent);
+  color: var(--color-ink);
+  @media (hover: hover) and (pointer: fine) {
+    &:hover {
+      background: var(--color-accent-hover);
+    }
+  }
+}
+@utility btn-ghost-dark {
+  color: #fff;
+  box-shadow: inset 0 0 0 1px rgb(255 255 255 / 0.14);
+  @media (hover: hover) and (pointer: fine) {
+    &:hover {
+      box-shadow: inset 0 0 0 1px rgb(255 255 255 / 0.3);
+    }
+  }
+}
+
+/* Ссылки и мелкие интерактивные элементы: смена цвета — ease, ховер только для мыши */
+@utility link-hover {
+  transition: color 150ms ease;
+  @media (hover: hover) and (pointer: fine) {
+    &:hover {
+      color: var(--color-ink);
+    }
+  }
+}
+
+/* ---------- Анимации ---------- */
+
+/* Появление первого экрана: редкое событие → можно, с каскадом 70ms. */
+@keyframes enter {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+    filter: blur(4px);
+  }
+}
+@utility enter {
+  animation: enter 640ms var(--ease-out) both;
+  animation-delay: calc(var(--i, 0) * 70ms);
+}
+
+/* Смена категории каталога: быстрая (220ms), с лёгким blur, каскад 35ms */
+@keyframes swap-in {
+  from {
+    opacity: 0;
+    transform: translateY(6px);
+    filter: blur(2px);
+  }
+}
+@utility swap-in {
+  animation: swap-in 220ms var(--ease-out) both;
+  animation-delay: calc(min(var(--i, 0), 6) * 35ms);
+}
+
+/* Морфинг иконки (копировать → галочка) на transitions — прерываемо */
+@utility icon-swap {
+  transition:
+    opacity 200ms var(--ease-out),
+    transform 200ms var(--ease-out),
+    filter 200ms var(--ease-out);
+  &[data-hidden='true'] {
+    opacity: 0;
+    transform: scale(0.5);
+    filter: blur(4px);
+  }
+}
+
+/* Reduced motion: не «ноль анимаций», а без движения — только прозрачность */
+@keyframes fade {
+  from {
+    opacity: 0;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  html {
+    scroll-behavior: auto;
+  }
+  .enter,
+  .swap-in {
+    animation-name: fade;
+  }
+  .icon-swap[data-hidden='true'] {
+    transform: none;
+    filter: none;
+  }
+  .btn:active,
+  .ant-btn:active {
+    transform: none;
+  }
+}
+
+/* ---------- Фактуры металлов (пока нет фото) ---------- */
+@utility finish-copper {
+  background:
+    repeating-linear-gradient(90deg, rgb(255 255 255 / 0.05) 0 1px, transparent 1px 3px),
+    linear-gradient(135deg, #7a3b1f 0%, #c06a3c 38%, #e4a074 52%, #b4592d 70%, #6e331a 100%);
+}
+@utility finish-brass {
+  background:
+    repeating-linear-gradient(90deg, rgb(255 255 255 / 0.05) 0 1px, transparent 1px 3px),
+    linear-gradient(135deg, #6f5520 0%, #b8933f 38%, #e2c47c 52%, #a9832f 70%, #5f4818 100%);
+}
+@utility finish-bronze {
+  background:
+    repeating-linear-gradient(90deg, rgb(255 255 255 / 0.05) 0 1px, transparent 1px 3px),
+    linear-gradient(135deg, #4f3519 0%, #8d6332 38%, #b98f5a 52%, #7d552a 70%, #432c14 100%);
+}
+@utility finish-aluminium {
+  background:
+    repeating-linear-gradient(90deg, rgb(255 255 255 / 0.12) 0 1px, transparent 1px 3px),
+    linear-gradient(135deg, #8d9197 0%, #c4c8cd 38%, #eef0f2 52%, #b5b9be 70%, #7f8388 100%);
+}
+@utility finish-steel {
+  background:
+    repeating-linear-gradient(90deg, rgb(255 255 255 / 0.08) 0 1px, transparent 1px 3px),
+    linear-gradient(135deg, #4c5157 0%, #8b9096 38%, #c7cbcf 52%, #7c8187 70%, #43474c 100%);
+}
+@utility finish-polymer {
+  background:
+    radial-gradient(120% 90% at 30% 20%, rgb(255 255 255 / 0.55), transparent 55%),
+    linear-gradient(135deg, #d9d4c7 0%, #ece8dd 50%, #cfc9ba 100%);
+}
+@utility finish-tool {
+  background: repeating-linear-gradient(45deg, rgb(224 119 58 / 0.9) 0 10px, #262626 10px 20px);
+}
+
+/* ---------- Подстройка antd под стиль ---------- */
+@layer components {
+  /* antd по умолчанию анимирует `all` — оставляем только нужные свойства + отклик на нажатие */
+  .ant-btn {
+    transition:
+      transform 160ms var(--ease-out),
+      background-color 150ms ease,
+      border-color 150ms ease,
+      color 150ms ease;
+  }
+  .ant-btn:not(:disabled):active {
+    transform: scale(0.97);
+  }
+  .ant-input-affix-wrapper,
+  .ant-input {
+    transition:
+      border-color 150ms ease,
+      box-shadow 150ms ease,
+      background-color 150ms ease;
+  }
+}
