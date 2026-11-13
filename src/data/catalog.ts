@@ -93,6 +93,7 @@ export const catalog: Category[] = [
       },
       {
         id: 'nichrome',
+        image: '/products/nichrome.jpg',
         name: 'Нихром',
         symbol: 'NiCr',
         finish: 'steel',
@@ -132,7 +133,14 @@ export const catalog: Category[] = [
         forms: [],
         grades: ['ПОН-Б', 'ПМБ'],
       },
-      { id: 'caprolactam', name: 'Капролактан', finish: 'polymer', forms: ['Стержни', 'Пластины'], grades: [] },
+      {
+        id: 'caprolactam',
+        image: '/products/caprolactam.jpg',
+        name: 'Капролактан',
+        finish: 'polymer',
+        forms: ['Стержни', 'Пластины'],
+        grades: [],
+      },
       {
         id: 'ptfe',
         image: '/products/ptfe.jpg',
@@ -141,8 +149,22 @@ export const catalog: Category[] = [
         forms: ['Стержни', 'Пластины'],
         grades: [],
       },
-      { id: 'polyurethane', name: 'Полиуретан', finish: 'polymer', forms: ['Стержни', 'Листы'], grades: [] },
-      { id: 'fiberglass', name: 'Стеклотекстолит', finish: 'polymer', forms: [], grades: [] },
+      {
+        id: 'polyurethane',
+        image: '/products/polyurethane.jpg',
+        name: 'Полиуретан',
+        finish: 'polymer',
+        forms: ['Стержни', 'Листы'],
+        grades: [],
+      },
+      {
+        id: 'fiberglass',
+        image: '/products/fiberglass.jpg',
+        name: 'Стеклотекстолит',
+        finish: 'polymer',
+        forms: [],
+        grades: [],
+      },
       {
         id: 'textolite',
         image: '/products/textolite.jpg',
@@ -162,12 +184,6 @@ export const catalog: Category[] = [
       {
         id: 'solder-tin',
         image: '/products/solder-tin.jpg',
-        imagePosition: '35% 50%',
-        credit: {
-          author: 'Suyash Dwivedi',
-          license: 'CC BY-SA 4.0',
-          url: 'https://commons.wikimedia.org/wiki/File:60-40_Solder_wire_(3).jpg',
-        },
         name: 'Припой оловянный',
         symbol: 'Sn',
         finish: 'aluminium',
@@ -185,11 +201,6 @@ export const catalog: Category[] = [
       {
         id: 'cutters',
         image: '/products/cutters.jpg',
-        credit: {
-          author: 'Progress and Poverty',
-          license: 'CC BY 4.0',
-          url: 'https://commons.wikimedia.org/wiki/File:Single_edge_cutting_tools.jpg',
-        },
         name: 'Резцы токарные',
         finish: 'tool',
         forms: ['Проходные', 'Подрезные', 'Чистовые', 'Расточные', 'Резьбовые', 'Канавочные'],
@@ -198,11 +209,6 @@ export const catalog: Category[] = [
       {
         id: 'wheels',
         image: '/products/wheels.jpg',
-        credit: {
-          author: 'Baihongbin',
-          license: 'CC BY-SA 4.0',
-          url: 'https://commons.wikimedia.org/wiki/File:Flexible_Flap_Disc_D100mm.jpg',
-        },
         name: 'Круги',
         finish: 'tool',
         forms: ['Шлифовальные', 'Отрезные', 'Обдирочные', 'Лепестковые'],
