@@ -79,12 +79,6 @@ export const catalog: Category[] = [
       },
       {
         id: 'babbitt',
-        image: '/products/babbitt.jpg',
-        credit: {
-          author: 'WillisPThomas (обрезано)',
-          license: 'CC BY-SA 3.0',
-          url: 'https://commons.wikimedia.org/wiki/File:Pigs_and_Bars_of_Babbitt.jpg',
-        },
         name: 'Баббит',
         symbol: 'Sn-Sb',
         finish: 'aluminium',
