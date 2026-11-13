@@ -57,8 +57,8 @@ export default function RequestForm() {
   }
 
   return (
-    <section id="request" aria-labelledby="request-title" className="bg-ink py-20 text-white sm:py-28">
-      <div className="mx-auto grid max-w-6xl gap-12 px-4 sm:px-6 lg:grid-cols-[1fr_1.15fr] lg:gap-20">
+    <section id="request" aria-labelledby="request-title" className="dark-photo relative isolate overflow-hidden bg-ink py-20 text-white sm:py-28">
+      <div className="relative mx-auto grid max-w-6xl gap-12 px-4 sm:px-6 lg:grid-cols-[1fr_1.15fr] lg:gap-20">
         <div>
           <p className="text-[14px] font-medium text-accent">Заявка</p>
           <h2 id="request-title" className="mt-2 text-[2rem] leading-[1.1] font-semibold tracking-[-0.03em] sm:text-[2.5rem]">

@@ -13,7 +13,7 @@ export const company = {
     number: '77015442874',
   },
   phones: [
-    { label: 'Офис (тел./факс)', display: '8 (7172) 53-26-87', href: 'tel:+77172532687' },
+    { label: 'Офис (тел./факс)', display: '8 (7172) 53-22-37', href: 'tel:+77172532237' },
     { label: 'Мобильный', display: '8 (701) 544-28-74', href: 'tel:+77015442874' },
   ],
 }
@@ -32,7 +32,7 @@ export const requisites: { label: string; value: string }[] = [
   { label: 'Банк', value: 'Столичный филиал АО «Alatau City Bank»' },
   { label: 'БИК', value: 'TSESKZKA' },
   { label: 'ОКПО', value: '00000003' },
-  { label: 'Тел./факс', value: '8 (7172) 53-26-87, 8 (701) 544-28-74' },
+  { label: 'Тел./факс', value: '8 (7172) 53-22-37, 8 (701) 544-28-74' },
   { label: 'E-mail', value: 'cwet-met@mail.ru' },
   { label: 'Свидетельство НДС', value: 'серия 62001 № 0017562 от 06.12.2012 г.' },
   {

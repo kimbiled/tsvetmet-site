@@ -28,11 +28,11 @@ export default function App() {
         <main id="main">
           <Hero />
           <Catalog />
-          <WeightCalculator />
           <RequestForm />
           <Contacts />
           <About />
           <Advantages />
+          <WeightCalculator />
           <Requisites />
         </main>
         <Footer />

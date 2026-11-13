@@ -14,8 +14,8 @@ const popular = ['М1', 'Д16Т', 'AISI 304', 'ПОС 40', 'УОНИ']
 
 export default function Hero() {
   return (
-    <section id="top" className="relative">
-      <div className="mx-auto grid max-w-6xl gap-10 px-4 pt-10 pb-16 sm:px-6 md:pt-16 lg:grid-cols-[1.1fr_1fr] lg:items-center lg:gap-16 lg:pt-20 lg:pb-24">
+    <section id="top" className="hero-photo relative isolate overflow-hidden">
+      <div className="relative mx-auto grid max-w-6xl gap-10 px-4 pt-10 pb-16 sm:px-6 md:pt-16 lg:grid-cols-[1.1fr_1fr] lg:items-center lg:gap-16 lg:pt-20 lg:pb-24">
         <div>
           <h1
             style={i(0)}

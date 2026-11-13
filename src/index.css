@@ -250,3 +250,53 @@
       background-color 150ms ease;
   }
 }
+
+/* ---------- Фоновые фото металла ----------
+   Картинки заранее размыты и сжаты (public/bg/*.webp), поэтому без CSS-blur:
+   ничего не пересчитывается при прокрутке. Вуаль сверху держит контраст текста. */
+@layer components {
+  /* Общий фон страницы — виден в секциях без своей заливки (каталог, контакты, преимущества) */
+  body::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    z-index: -1;
+    pointer-events: none;
+    background:
+      linear-gradient(rgb(250 250 250 / 0.84), rgb(250 250 250 / 0.9)),
+      url('/bg/page-metal.webp') center / cover no-repeat;
+  }
+
+  /* Первый экран — фото заметнее справа, слева под заголовком почти белое */
+  .hero-photo::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    z-index: -1;
+    pointer-events: none;
+    background:
+      linear-gradient(to bottom, transparent 75%, rgb(250 250 250 / 0.9)),
+      linear-gradient(rgb(250 250 250 / 0.8), rgb(250 250 250 / 0.8)),
+      url('/bg/hero-aluminium.webp') 70% center / cover no-repeat;
+  }
+  @media (min-width: 1024px) {
+    .hero-photo::before {
+      background:
+        linear-gradient(to bottom, transparent 75%, rgb(250 250 250 / 0.9)),
+        linear-gradient(90deg, rgb(250 250 250 / 0.95) 0%, rgb(250 250 250 / 0.82) 45%, rgb(250 250 250 / 0.5) 100%),
+        url('/bg/hero-aluminium.webp') center / cover no-repeat;
+    }
+  }
+
+  /* Тёмный блок заявки — трубы из нержавейки под графитовой вуалью */
+  .dark-photo::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    z-index: -1;
+    pointer-events: none;
+    background:
+      linear-gradient(rgb(23 23 23 / 0.86), rgb(23 23 23 / 0.93)),
+      url('/bg/pipes-dark.webp') center / cover no-repeat;
+  }
+}
