@@ -109,7 +109,14 @@ export default function Catalog() {
                   </div>
                   <ul className={clsx('grid gap-3', gridCols(cat.materials.length))}>
                     {cat.materials.map((m) => (
-                      <MaterialCard key={m.id} m={m} q={q} wide={cat.materials.length === 1} index={index++} />
+                      <MaterialCard
+                        key={m.id}
+                        m={m}
+                        q={q}
+                        wide={cat.materials.length === 1}
+                        tall={cat.materials.length === 2}
+                        index={index++}
+                      />
                     ))}
                   </ul>
                 </div>
@@ -143,7 +150,8 @@ const allMaterials = catalog.flatMap((c) => c.materials)
 const hasPhotos = allMaterials.some((m) => m.image)
 const credits = allMaterials.filter((m) => m.image && m.credit)
 
-function MaterialCard({ m, q, wide, index }: { m: Material; q: string; wide: boolean; index: number }) {
+/** tall — ряд из двух карточек: фото выше, чтобы предметы (резцы, круги) читались целиком */
+function MaterialCard({ m, q, wide, tall, index }: { m: Material; q: string; wide: boolean; tall: boolean; index: number }) {
   const hit = (v: string) => !!q && norm(v).includes(q)
   return (
     <li
@@ -163,7 +171,9 @@ function MaterialCard({ m, q, wide, index }: { m: Material; q: string; wide: boo
           m.image
             ? wide
               ? 'h-28 md:h-auto md:min-h-44 md:w-64 md:shrink-0'
-              : 'h-24 sm:h-40'
+              : tall
+                ? 'h-28 sm:h-52'
+                : 'h-24 sm:h-40'
             : wide
               ? 'h-14 md:h-auto md:w-56 md:shrink-0'
               : 'h-14 sm:h-40',

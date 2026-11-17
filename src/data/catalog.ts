@@ -39,7 +39,7 @@ export const catalog: Category[] = [
     id: 'nonferrous',
     title: 'Цветной металлопрокат',
     short: 'Цветной',
-    lead: 'Бронза, медь, алюминий, латунь, баббит и нихром.',
+    lead: 'Бронза, медь, алюминий, латунь, баббит, нихром, медные и бронзовые втулки.',
     materials: [
       {
         id: 'bronze',
@@ -47,7 +47,7 @@ export const catalog: Category[] = [
         name: 'Бронза',
         symbol: 'CuSn',
         finish: 'bronze',
-        forms: ['Прутки', 'Втулки'],
+        forms: ['Прутки'],
         grades: ['БрО5Ц5С5', 'БрАЖ 9-4'],
       },
       {
@@ -79,6 +79,7 @@ export const catalog: Category[] = [
       },
       {
         id: 'babbitt',
+        image: '/products/babbitt.jpg',
         name: 'Баббит',
         symbol: 'Sn-Sb',
         finish: 'aluminium',
@@ -93,6 +94,24 @@ export const catalog: Category[] = [
         finish: 'steel',
         forms: ['Проволока'],
         grades: ['Х20Н80'],
+      },
+      {
+        id: 'bushing-copper',
+        image: '/products/bushing-copper.jpg',
+        name: 'Втулки медные',
+        symbol: 'Cu',
+        finish: 'copper',
+        forms: [],
+        grades: ['М1'],
+      },
+      {
+        id: 'bushing-bronze',
+        image: '/products/bushing-bronze.jpg',
+        name: 'Втулки бронзовые',
+        symbol: 'CuSn',
+        finish: 'bronze',
+        forms: [],
+        grades: ['БрАЖ 9-4', 'БрО5Ц5С5'],
       },
     ],
   },

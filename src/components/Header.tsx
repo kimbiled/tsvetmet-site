@@ -42,7 +42,7 @@ export default function Header() {
           <ul className="flex items-center gap-0.5">
             {nav.map((item) => (
               <li key={item.href}>
-                <a href={item.href} className="link-hover rounded-md px-3 py-2 text-[14px] text-gray-600">
+                <a href={item.href} className="link-hover rounded-md px-2 py-2 text-[15px] font-semibold whitespace-nowrap text-gray-800 xl:px-2.5">
                   {item.label}
                 </a>
               </li>
@@ -53,18 +53,18 @@ export default function Header() {
         <div className="flex items-center gap-2">
           <a
             href={mobile.href}
-            className="link-hover hidden items-center gap-2 rounded-md px-2 py-2 text-[14px] font-medium text-gray-600 tabular-nums md:inline-flex"
+            className="link-hover hidden items-center gap-2 rounded-md px-2 py-2 text-[15px] font-semibold whitespace-nowrap text-gray-800 tabular-nums md:inline-flex lg:hidden xl:inline-flex"
           >
             <Phone className="size-4 text-accent" aria-hidden />
             {mobile.display}
           </a>
-          <a href="#request" className="btn btn-dark hidden h-9 px-3.5 text-[14px] sm:inline-flex">
+          <a href="#request" className="btn btn-dark hidden h-10 px-4 text-[15px] font-semibold sm:inline-flex">
             Оставить заявку
           </a>
           <a
             href={mobile.href}
             aria-label={`Позвонить: ${mobile.display}`}
-            className="grid size-11 place-items-center rounded-lg transition-transform duration-150 ease-out active:scale-[0.97] md:hidden"
+            className="grid size-11 place-items-center rounded-lg transition-transform duration-150 ease-out active:scale-[0.97] md:hidden lg:grid xl:hidden"
           >
             <Phone className="size-5 text-accent" aria-hidden />
           </a>
